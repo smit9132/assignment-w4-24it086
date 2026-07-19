@@ -1,33 +1,31 @@
-import "./App.css";
+import { useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
+import './App.css';
 
-import Header from "./components/Header";
-import About from "./components/About";
-import Skills from "./components/Skills";
-import Footer from "./components/Footer";
+import Navbar from './components/Navbar';
+import Home from './pages/Home';
+import Projects from './pages/Projects';
+import Contact from './pages/Contact';
+import NotFound from './pages/NotFound';
 
 function App() {
-  const studentName = "Smit Sanjava";
+  const [darkMode, setDarkMode] = useState(false);
 
-  const skills = [
-    "React",
-    "TypeScript",
-    "JavaScript",
-    "HTML",
-    "CSS",
-    "Python",
-    "Git",
-    "SQL",
-  ];
+  const handleToggleTheme = () => {
+    setDarkMode((current) => !current);
+  };
 
   return (
-    <div className="container">
-      <Header name={studentName} themeColor="#0077cc" />
-
-      <About />
-
-      <Skills skillList={skills} />
-
-      <Footer year={new Date().getFullYear()} />
+    <div className={darkMode ? 'app dark-mode' : 'app light-mode'}>
+      <Navbar darkMode={darkMode} onToggleTheme={handleToggleTheme} />
+      <main className="app-main">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
     </div>
   );
 }
