@@ -1,19 +1,34 @@
-// routes/taskRoutes.js
+const express = require("express");
 
-const express = require('express');
 const router = express.Router();
-const taskController = require('../controllers/taskController');
 
-// GET /tasks - retrieve all tasks
-router.get('/tasks', taskController.getTasks);
+const {
+    getTasks,
+    getTaskById,
+    createTask,
+    updateTask,
+    deleteTask
+} = require("../controllers/taskController");
 
-// POST /tasks - create a new task
-router.post('/tasks', taskController.createTask);
 
-// PUT /tasks/:id - update a task by id
-router.put('/tasks/:id', taskController.updateTask);
+// GET all tasks
+router.get("/tasks", getTasks);
 
-// DELETE /tasks/:id - delete a task by id
-router.delete('/tasks/:id', taskController.deleteTask);
+
+// GET single task
+router.get("/tasks/:id", getTaskById);
+
+
+// CREATE task
+router.post("/tasks", createTask);
+
+
+// UPDATE task
+router.put("/tasks/:id", updateTask);
+
+
+// DELETE task
+router.delete("/tasks/:id", deleteTask);
+
 
 module.exports = router;

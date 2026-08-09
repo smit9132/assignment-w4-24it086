@@ -1,63 +1,114 @@
 // controllers/taskController.js
 
-const tasks = require('../data/tasks');
+const Task = require("../models/Task");
 
 // Get all tasks
-const getTasks = (req, res) => {
-  res.status(200).json(tasks);
+const getTasks = async (req, res, next) => {
+    try {
+        const tasks = await Task.find();
+
+        res.status(200).json({
+            success: true,
+            data: tasks
+        });
+    } catch (error) {
+        next(error);
+    }
 };
+
+
+// Get a single task by ID
+const getTaskById = async (req, res, next) => {
+    try {
+        const task = await Task.findById(req.params.id);
+
+        if (!task) {
+            return res.status(404).json({
+                success: false,
+                message: "Task not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: task
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 
 // Create a new task
-const createTask = (req, res) => {
-  const { title } = req.body;
+const createTask = async (req, res, next) => {
+    try {
+        const task = await Task.create(req.body);
 
-  if (!title) {
-    return res.status(400).json({ error: 'Title is required' });
-  }
-
-  const newTask = {
-    id: tasks.length + 1,
-    title,
-    completed: false,
-  };
-
-  tasks.push(newTask);
-  res.status(201).json(newTask);
+        res.status(201).json({
+            success: true,
+            data: task
+        });
+    } catch (error) {
+        next(error);
+    }
 };
 
-// Update a task by id
-const updateTask = (req, res) => {
-  const taskId = parseInt(req.params.id, 10);
-  const { title, completed } = req.body;
 
-  const task = tasks.find((item) => item.id === taskId);
+// Update a task
+const updateTask = async (req, res, next) => {
+    try {
+        const task = await Task.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            {
+                new: true,
+                runValidators: true
+            }
+        );
 
-  if (!task) {
-    return res.status(404).json({ error: 'Task not found' });
-  }
+        if (!task) {
+            return res.status(404).json({
+                success: false,
+                message: "Task not found"
+            });
+        }
 
-  if (title !== undefined) task.title = title;
-  if (completed !== undefined) task.completed = completed;
-
-  res.status(200).json(task);
+        res.status(200).json({
+            success: true,
+            data: task
+        });
+    } catch (error) {
+        next(error);
+    }
 };
 
-// Delete a task by id
-const deleteTask = (req, res) => {
-  const taskId = parseInt(req.params.id, 10);
-  const taskIndex = tasks.findIndex((item) => item.id === taskId);
 
-  if (taskIndex === -1) {
-    return res.status(404).json({ error: 'Task not found' });
-  }
+// Delete a task
+const deleteTask = async (req, res, next) => {
+    try {
+        const task = await Task.findByIdAndDelete(req.params.id);
 
-  tasks.splice(taskIndex, 1);
-  res.status(200).json({ message: 'Task deleted successfully' });
+        if (!task) {
+            return res.status(404).json({
+                success: false,
+                message: "Task not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Task deleted successfully"
+        });
+    } catch (error) {
+        next(error);
+    }
 };
+
 
 module.exports = {
-  getTasks,
-  createTask,
-  updateTask,
-  deleteTask,
+    getTasks,
+    getTaskById,
+    createTask,
+    updateTask,
+    deleteTask
 };
