@@ -1,5 +1,15 @@
 # React + Vite
 
+## Running the frontend
+
+```bash
+npm install
+npm run dev
+```
+
+The frontend runs at `http://localhost:5173` and communicates with the Express API at `http://localhost:5000`.
+Start the backend separately from `task-manager-api-24it086` with `npm install` and `node server.js`.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
