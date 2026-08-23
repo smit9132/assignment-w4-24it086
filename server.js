@@ -19,7 +19,9 @@ app.use(logger);
 
 // Mount task routes.
 const taskRoutes = require('./routes/taskRoutes');
+const authRoutes = require('./routes/authRoutes');
   
+app.use("/", authRoutes);
 app.use("/", taskRoutes);
 
 // Define a simple route for GET /

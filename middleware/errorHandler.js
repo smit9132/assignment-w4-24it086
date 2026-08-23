@@ -26,10 +26,10 @@ const errorHandler = (err, req, res, next) => {
     }
 
 
-    // Generic server error
-    res.status(500).json({
+    // Errors may provide a safe, specific status code.
+    res.status(err.statusCode || 500).json({
         success: false,
-        message: "Internal Server Error"
+        message: err.statusCode ? err.message : "Internal Server Error"
     });
 };
 

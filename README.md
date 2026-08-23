@@ -116,6 +116,41 @@ You should see:
 Server is running on http://localhost:5000
 ```
 
+## Practical 7: Authentication and Middleware Pipeline
+
+Practical 7 adds JWT authentication and server-side validation while preserving the existing MongoDB/Mongoose task CRUD API.
+
+### Authentication Features
+
+- `POST /register` creates a user and stores the password as a bcrypt hash.
+- `POST /login` verifies credentials and returns a JWT that expires in one hour.
+- `GET /me` returns the authenticated user's `id`, `email`, and `createdAt` without the password.
+- All task routes require `Authorization: Bearer <token>`.
+- `POST /tasks` uses validation middleware and rejects a missing or empty title before database access.
+
+### Authentication Endpoints
+
+Register with `{ "email": "student@example.com", "password": "password123" }` at `POST /register`.
+
+Login with the same body at `POST /login`, then use the returned token in the Authorization header for `/tasks` and `/me` requests.
+
+### Protected Task Routes
+
+`GET /tasks`, `GET /tasks/:id`, `POST /tasks`, `PUT /tasks/:id`, `PATCH /tasks/:id`, and `DELETE /tasks/:id` are protected by `authMiddleware`. Requests without a token or with an invalid/expired token return HTTP 401.
+
+### Environment Variables
+
+Copy `.env.example` to `.env` and set `MONGO_URI`, `PORT`, and a private `JWT_SECRET`. Never commit `.env` or place a real secret in `.env.example`.
+
+### Postman Testing Flow
+
+1. Register a user with `POST /register`.
+2. Login with `POST /login` and copy the returned token.
+3. Send `Authorization: Bearer <token>` when testing `/tasks` and `/me`.
+4. Test task create, read, update, and delete operations.
+5. Confirm missing and invalid tokens return HTTP 401.
+6. Confirm `POST /tasks` without a title returns HTTP 400 with `Title is required`.
+
 ## API Endpoints
 
 All endpoints are prefixed with `/` and are documented below.
