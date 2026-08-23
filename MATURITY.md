@@ -96,16 +96,132 @@ The existing Task Manager API already uses resource paths and the correct HTTP m
 |---|---|---|---|
 | Level 0 | Single endpoint or action-based API, no resource structure | No | The API has separate resource routes like `/tasks` and `/tasks/:id` instead of one generic endpoint. |
 | Level 1 | Uses resource URLs for entities | Yes | Routes are defined as `/tasks` and `/tasks/:id` in `routes/taskRoutes.js`. |
-| Level 2 | Uses HTTP verbs correctly with resources | Yes | `GET`, `POST`, `PUT`, `DELETE` are used with `/tasks` and `/tasks/:id` in `routes/taskRoutes.js`. |
-| Level 3 | Uses HATEOAS links in responses | No | Responses in `controllers/taskController.js` return task objects and messages, but no `_links` section. |
+| Level 2 | Uses HTTP verbs correctly with resources | Yes | `GET`, `POST`, `PUT`, `PATCH`, `DELETE` are used with `/tasks` and `/tasks/:id` in `routes/taskRoutes.js`. Proper HTTP status codes (201, 200, 400, 404, 500) are returned. |
+| Level 3 | Uses HATEOAS links in responses | Yes | **NEW:** All responses include `_links` with dynamically generated URLs pointing to related actions. Implemented in `utils/hateoas.js` and integrated into `controllers/taskController.js`. |
 
-## Step 4: Level 2 Compliance
-The API already satisfies Level 2. No code changes were required for Richardson Level 2 compliance.
+## Step 4: Level 3 HATEOAS Implementation (NEW)
 
-### Why no changes were needed
-- The routes are resource-based.
-- The correct HTTP methods are used for create, read, update, and delete.
-- Status codes are appropriate for success and error cases.
+The API now fully implements Richardson Maturity Model Level 3 with HATEOAS support.
+
+### What Changed
+1. **Created `utils/hateoas.js`**: Helper module that generates consistent hypermedia links for all tasks.
+2. **Updated `controllers/taskController.js`**: All endpoints now include `_links` in responses.
+3. **Added PATCH endpoint**: New `PATCH /tasks/:id` route for partial updates.
+4. **Structured error responses**: Consistent JSON structure for all responses (success and error).
+
+### HATEOAS Links in Every Response
+
+#### Individual Task Response
+Every task includes links to available actions:
+
+```json
+{
+  "_id": "507f1f77bcf86cd799439011",
+  "title": "Learn Express.js",
+  "description": "Master Express fundamentals",
+  "completed": false,
+  "priority": "high",
+  "createdAt": "2024-08-13T10:00:00.000Z",
+  "_links": {
+    "self": {
+      "href": "/tasks/507f1f77bcf86cd799439011",
+      "method": "GET"
+    },
+    "update": {
+      "href": "/tasks/507f1f77bcf86cd799439011",
+      "method": "PUT"
+    },
+    "partialUpdate": {
+      "href": "/tasks/507f1f77bcf86cd799439011",
+      "method": "PATCH"
+    },
+    "delete": {
+      "href": "/tasks/507f1f77bcf86cd799439011",
+      "method": "DELETE"
+    },
+    "collection": {
+      "href": "/tasks",
+      "method": "GET"
+    }
+  }
+}
+```
+
+#### Collection Response
+The `/tasks` endpoint now includes collection-level links:
+
+```json
+{
+  "success": true,
+  "count": 2,
+  "data": [
+    { "..." (task with _links) }
+  ],
+  "_links": {
+    "self": {
+      "href": "/tasks",
+      "method": "GET"
+    },
+    "create": {
+      "href": "/tasks",
+      "method": "POST"
+    }
+  }
+}
+```
+
+### How HATEOAS Improves the API
+
+1. **Client Discovery**: A client doesn't need to hardcode URLs like `/tasks/123`. It can follow the `self` link from any task.
+2. **Dynamic URLs**: If the API structure changes, links remain consistent because they're generated server-side.
+3. **Self-Documenting**: Each link includes a `method` property, telling the client exactly how to use it.
+4. **Flexibility**: New actions can be added without breaking existing clients — clients simply follow the provided links.
+
+### Example Client Flow (HATEOAS in Action)
+
+```
+1. Client requests: GET /tasks
+2. Server responds with list of tasks, each with _links
+3. Client picks a task and follows the "partialUpdate" link
+4. Client sends: PATCH /tasks/507f1f77bcf86cd799439011 with { "completed": true }
+5. Server responds with updated task and new _links
+6. Client follows "collection" link to get all tasks again
+```
+
+Without HATEOAS, the client would need to know the URL patterns in advance. With HATEOAS, the server tells the client where to go next.
+
+## Step 5: Endpoints After Upgrade
+
+The API now supports these fully maturity-compliant endpoints:
+
+| Method | Path | Description | Status Codes |
+|--------|------|-------------|--------------|
+| `GET` | `/tasks` | List all tasks with HATEOAS links | 200 |
+| `GET` | `/tasks/:id` | Retrieve a single task with HATEOAS links | 200, 404, 400 |
+| `POST` | `/tasks` | Create a new task and return with HATEOAS links | 201, 400 |
+| `PUT` | `/tasks/:id` | Full update (all fields must be provided) | 200, 404, 400 |
+| `PATCH` | `/tasks/:id` | Partial update (only specified fields) | 200, 404, 400 |
+| `DELETE` | `/tasks/:id` | Delete a task, return collection link | 200, 404 |
+
+---
+
+## Comparison: Before and After
+
+### Before This Upgrade
+- ✅ Level 1: Resource-oriented URLs
+- ✅ Level 2: HTTP methods and status codes
+- ❌ Level 3: No HATEOAS links
+- ❌ No PATCH endpoint
+- ❌ Responses lacked hypermedia guidance
+
+### After This Upgrade
+- ✅ Level 1: Resource-oriented URLs
+- ✅ Level 2: HTTP methods and status codes
+- ✅ **Level 3: Full HATEOAS implementation with dynamic links**
+- ✅ **PATCH endpoint for partial updates**
+- ✅ **All responses include actionable hypermedia links**
+- ✅ **Structured error responses**
+- ✅ **Production-ready error handling**
 
 ## HATEOAS Awareness
 

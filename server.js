@@ -1,15 +1,17 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const cors = require("cors");
 require("dotenv").config();
 
 // Create the Express application instance.
 const app = express();
 
 // Set the PORT value.
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 // Use express.json() middleware to parse JSON request bodies.
 app.use(express.json());
+app.use(cors({ origin: "http://localhost:5173" }));
 
 // Use logger middleware.
 const logger = require("./middleware/logger");

@@ -7,6 +7,7 @@ const {
     getTaskById,
     createTask,
     updateTask,
+    partialUpdateTask,
     deleteTask
 } = require("../controllers/taskController");
 
@@ -23,8 +24,12 @@ router.get("/tasks/:id", getTaskById);
 router.post("/tasks", createTask);
 
 
-// UPDATE task
+// UPDATE task (PUT - full update)
 router.put("/tasks/:id", updateTask);
+
+
+// PATCH task (partial update)
+router.patch("/tasks/:id", partialUpdateTask);
 
 
 // DELETE task
