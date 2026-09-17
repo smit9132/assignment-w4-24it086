@@ -1,11 +1,9 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import './App.css';
 
 import Navbar from './components/Navbar/Navbar';
 import Hero from './components/Hero/Hero';
-import Projects from './components/Projects/Projects';
-import Contact from './components/Contact/Contact';
 import About from './components/About/About';
 import Skills from './components/Skills/Skills';
 import Footer from './components/Footer/Footer';
@@ -13,6 +11,9 @@ import Achievements from './components/Achievements/Achievements';
 import Certifications from './components/Certifications/Certifications';
 import Education from './components/Education/Education';
 import Specialization from './components/Specialization/Specialization';
+
+const Projects = lazy(() => import('./components/Projects/Projects'));
+const Contact = lazy(() => import('./components/Contact/Contact'));
 
 function Home() {
   return (
@@ -54,12 +55,21 @@ function App() {
       />
 
       <main className="app-main">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense
+          fallback={(
+            <div className="page-loading" role="status" aria-live="polite">
+              <h2>Loading page...</h2>
+              <p>Please wait while the page loads.</p>
+            </div>
+          )}
+        >
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </main>
     </div>
   );
