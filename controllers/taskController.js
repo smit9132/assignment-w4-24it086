@@ -2,14 +2,25 @@
 
 const Task = require("../models/Task");
 const { addLinksToTask, addLinksToTasks } = require("../utils/hateoas");
+const { cache, stats } = require("../cache");
+
+const ALL_TASKS_KEY = "all_tasks";
+const getTaskCacheKey = (taskId) => `task_${taskId}`;
 
 // Get all tasks
 const getTasks = async (req, res, next) => {
     try {
+        const cachedTasks = cache.get(ALL_TASKS_KEY);
+        if (cachedTasks) {
+            stats.allTasks.hits += 1;
+            return res.status(200).json(cachedTasks);
+        }
+
+        stats.allTasks.misses += 1;
         const tasks = await Task.find();
         const tasksWithLinks = addLinksToTasks(tasks);
 
-        res.status(200).json({
+        const response = {
             success: true,
             count: tasks.length,
             data: tasksWithLinks,
@@ -23,7 +34,10 @@ const getTasks = async (req, res, next) => {
                     method: "POST"
                 }
             }
-        });
+        };
+
+        cache.set(ALL_TASKS_KEY, response);
+        res.status(200).json(response);
     } catch (error) {
         next(error);
     }
@@ -33,6 +47,14 @@ const getTasks = async (req, res, next) => {
 // Get a single task by ID
 const getTaskById = async (req, res, next) => {
     try {
+        const taskCacheKey = getTaskCacheKey(req.params.id);
+        const cachedTask = cache.get(taskCacheKey);
+        if (cachedTask) {
+            stats.taskById.hits += 1;
+            return res.status(200).json(cachedTask);
+        }
+
+        stats.taskById.misses += 1;
         const task = await Task.findById(req.params.id);
 
         if (!task) {
@@ -44,10 +66,13 @@ const getTaskById = async (req, res, next) => {
 
         const taskWithLinks = addLinksToTask(task);
 
-        res.status(200).json({
+        const response = {
             success: true,
             data: taskWithLinks
-        });
+        };
+
+        cache.set(taskCacheKey, response);
+        res.status(200).json(response);
     } catch (error) {
         next(error);
     }
@@ -59,6 +84,7 @@ const createTask = async (req, res, next) => {
     try {
         const task = await Task.create(req.body);
         const taskWithLinks = addLinksToTask(task);
+        cache.del(ALL_TASKS_KEY);
 
         res.status(201).json({
             success: true,
@@ -90,6 +116,8 @@ const updateTask = async (req, res, next) => {
         }
 
         const taskWithLinks = addLinksToTask(task);
+        cache.del(ALL_TASKS_KEY);
+        cache.del(getTaskCacheKey(req.params.id));
 
         res.status(200).json({
             success: true,
@@ -121,6 +149,8 @@ const partialUpdateTask = async (req, res, next) => {
         }
 
         const taskWithLinks = addLinksToTask(task);
+        cache.del(ALL_TASKS_KEY);
+        cache.del(getTaskCacheKey(req.params.id));
 
         res.status(200).json({
             success: true,
@@ -143,6 +173,9 @@ const deleteTask = async (req, res, next) => {
                 message: "Task not found"
             });
         }
+
+        cache.del(ALL_TASKS_KEY);
+        cache.del(getTaskCacheKey(req.params.id));
 
         res.status(200).json({
             success: true,

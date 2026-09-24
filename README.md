@@ -663,6 +663,40 @@ git push origin main
 
 ---
 
+## Practical 9: In-Memory Caching
+
+The API uses `node-cache` for in-memory caching without changing the existing MongoDB/Mongoose CRUD or authentication behavior.
+
+### Cache Configuration
+
+- TTL: 60 seconds (`stdTTL: 60`)
+- `GET /tasks` key: `all_tasks`
+- `GET /tasks/:id` key: `task_<id>`
+- Cache implementation: `cache.js`
+
+The cache stores the existing response format, including HATEOAS links. The first request after startup or invalidation is a cache miss and queries MongoDB. Requests within the TTL can be served from memory.
+
+### Cache Invalidation
+
+After a successful `POST /tasks`, the `all_tasks` cache is deleted. After a successful `PUT`, `PATCH`, or `DELETE` on `/tasks/:id`, both `all_tasks` and the affected `task_<id>` cache entry are deleted. Failed database operations do not invalidate the cache.
+
+### Cache Statistics
+
+`GET /api/cache/stats` returns cache hit and miss counters for collection and individual-task requests, the configured TTL, and the current number of cache entries. The endpoint requires the same Bearer JWT authentication as the task routes.
+
+### Practical 9 Measurements
+
+The three baseline readings were taken before caching:
+
+| Condition | Reading 1 | Reading 2 | Reading 3 | Average |
+|---|---:|---:|---:|---:|
+| Without caching | 85 ms | 327 ms | 60 ms | 157.33 ms |
+| With caching | To be measured | To be measured | To be measured | To be calculated |
+
+The cached readings must be measured in Postman after restarting the server. Do not use estimated values.
+
+---
+
 ## License
 
 ISC
