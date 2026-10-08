@@ -697,6 +697,38 @@ The cached readings must be measured in Postman after restarting the server. Do 
 
 ---
 
+## Practical 10: Asynchronous Event-Driven Processing
+
+The API uses Node.js's built-in `EventEmitter`; no external event or queue package is used. The shared event instance is defined in `events.js`. `server.js` imports `listeners.js` once before mounting the task routes, registering handlers before task requests can emit events.
+
+### Events and Processing
+
+- After MongoDB successfully creates a task and the existing HTTP 201 response is sent, the controller emits `task-created` with the task and authenticated user's ID.
+- The `task-created` listener logs the task title, creation timestamp, and authenticated user ID (the available user context; the current Task schema has no separate assignee field). It logs when handling starts, then completes its notification log after an artificial 2-second `setTimeout` delay. The delayed work does not hold the HTTP request open.
+- After a task is successfully deleted and the existing HTTP 200 response is sent, the controller emits `task-deleted`. Its listener logs the deleted task and user separately.
+- An `error` listener logs custom EventEmitter errors so an emitted `error` event has a handler.
+- The API logs `[API] Response sent at` immediately after sending its response, making it possible to compare that time with `[Notification] Notification completed at`. No timestamps or test outcomes are prefilled here; capture the actual output from your run.
+
+Event listeners do not change authentication, CRUD response formats, or Practical 9 cache behavior. POST still clears `all_tasks`; PUT/PATCH/DELETE still clear `all_tasks` and the affected task cache entry. `GET /api/cache/stats` remains available with a Bearer token.
+
+### Practical 10 Postman Flow
+
+Start the API using `node server.js` after configuring `.env` with `MONGO_URI` and `JWT_SECRET`.
+
+1. Register a user: `POST http://localhost:5000/register`, JSON body `{"email":"student@example.com","password":"password123"}`. Use a unique email if that account already exists.
+2. Log in: `POST http://localhost:5000/login` with the same JSON body. Copy `token` from the response.
+3. For each following request, set Authorization to **Bearer Token** and provide that token.
+4. Check the collection cache: send `GET http://localhost:5000/tasks` twice, then `GET http://localhost:5000/api/cache/stats`; compare `allTasks` misses/hits.
+5. Create a task: `POST http://localhost:5000/tasks`, `Content-Type: application/json`, body `{"title":"Practical 10 event test","description":"Verify asynchronous notification","priority":"high"}`. Confirm HTTP 201, then copy `data._id` from the response as the task ID. In the server terminal, compare `[API] Response sent at` with `[Notification] Notification completed at`; the latter should be about 2 seconds later.
+6. Request `GET /tasks` again and confirm the new task is present (POST invalidated the prior collection response). Repeat the GET and inspect cache statistics for a hit.
+7. Check individual-task caching with two requests to `GET http://localhost:5000/tasks/<taskId>`, then inspect `/api/cache/stats` for `taskById` activity.
+8. Update the task using `PATCH http://localhost:5000/tasks/<taskId>` with body `{"completed":true}`. Request the task again to confirm the updated value and that the old cached entry was invalidated. A `PUT` can be checked similarly using the full task fields.
+9. Delete it using `DELETE http://localhost:5000/tasks/<taskId>`. Confirm HTTP 200 and observe `[Event] task-deleted received` and `[Notification] Deleted task` in the server terminal. GET the collection and individual task again to verify invalidation and the expected 404 for the deleted task.
+
+Capture the actual Postman status/body and server terminal logs as evidence. In particular, include the POST HTTP 201 response alongside the API response timestamp and the later notification completion timestamp; include DELETE HTTP 200 alongside its event logs; and include cache-stat responses before and after mutations.
+
+---
+
 ## License
 
 ISC

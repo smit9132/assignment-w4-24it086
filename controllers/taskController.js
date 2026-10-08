@@ -3,6 +3,7 @@
 const Task = require("../models/Task");
 const { addLinksToTask, addLinksToTasks } = require("../utils/hateoas");
 const { cache, stats } = require("../cache");
+const taskEvents = require("../events");
 
 const ALL_TASKS_KEY = "all_tasks";
 const getTaskCacheKey = (taskId) => `task_${taskId}`;
@@ -90,6 +91,10 @@ const createTask = async (req, res, next) => {
             success: true,
             data: taskWithLinks
         });
+
+        console.log("[API] Task created");
+        console.log(`[API] Response sent at: ${new Date().toISOString()}`);
+        taskEvents.emit("task-created", { task, userId: req.user?.id });
     } catch (error) {
         next(error);
     }
@@ -187,6 +192,9 @@ const deleteTask = async (req, res, next) => {
                 }
             }
         });
+
+        console.log("[API] Task deleted");
+        taskEvents.emit("task-deleted", { task, userId: req.user?.id });
     } catch (error) {
         next(error);
     }

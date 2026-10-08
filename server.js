@@ -17,6 +17,9 @@ app.use(cors({ origin: "http://localhost:5173" }));
 const logger = require("./middleware/logger");
 app.use(logger);
 
+// Register task event listeners before routes can emit events.
+require("./listeners");
+
 // Mount task routes.
 const taskRoutes = require('./routes/taskRoutes');
 const authRoutes = require('./routes/authRoutes');
