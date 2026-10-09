@@ -1,17 +1,18 @@
-# Task Manager REST API
+# Task Manager API and Docker Compose Application
 
-A production-ready REST API for managing tasks, built with Node.js, Express.js, MongoDB, and Mongoose.
+This project provides a React task-management frontend and a Node.js/Express REST API backed by MongoDB. It demonstrates task CRUD, JWT authentication, caching, event-driven notifications, HATEOAS responses, and containerization with Docker Compose.
 
 This API implements the **Richardson Maturity Model Level 3**, achieving resource-oriented URLs, proper HTTP methods/status codes, and HATEOAS (Hypermedia As The Engine Of Application State) support.
 
 ## Technology Stack
 
-- **Runtime:** Node.js
-- **Framework:** Express.js
-- **Database:** MongoDB Atlas
-- **ODM:** Mongoose
+- **Frontend:** React, React Router, Vite
+- **Backend:** Node.js 20, Express 5
+- **Database:** MongoDB 7 with Mongoose 8
+- **Authentication:** JWT and bcryptjs
+- **Other backend features:** NodeCache, Node.js EventEmitter, custom middleware
+- **Containerization:** Docker and Docker Compose
 - **Configuration:** dotenv
-- **Middleware:** Custom logger and global error handler
 
 ## Richardson Maturity Model
 
@@ -56,65 +57,49 @@ The API includes hypermedia links (`_links`) in responses, allowing clients to d
 ## Project Structure
 
 ```
-├── server.js                      # Express app setup and MongoDB connection
-├── package.json                   # Project dependencies
-├── .env                          # MongoDB URI (not committed to Git)
-├── .env.example                  # Template for .env
-├── .gitignore                    # Git ignore rules
-├── controllers/
-│   └── taskController.js         # Request handlers and business logic
-├── routes/
-│   └── taskRoutes.js             # API route definitions
-├── models/
-│   └── Task.js                   # Mongoose schema for tasks
-├── middleware/
-│   ├── logger.js                 # HTTP request logging
-│   └── errorHandler.js           # Global error handling
-├── utils/
-│   └── hateoas.js                # HATEOAS link generation helpers
-└── data/
-    └── tasks.js                  # Legacy in-memory data (not used)
+├── Dockerfile                 # Backend image
+├── docker-compose.yml         # Frontend, backend, MongoDB, network, and volume
+├── .dockerignore              # Backend build-context exclusions
+├── .env.example               # Safe local environment template
+├── server.js                  # Express app and MongoDB connection
+├── cache.js / events.js       # Cache and shared task event emitter
+├── listeners.js               # Event listeners/notifications
+├── controllers/               # Authentication and task handlers
+├── middleware/                # Authentication, validation, logging, errors
+├── models/                    # Mongoose Task and User models
+├── routes/                    # Authentication, task, and cache endpoints
+├── utils/hateoas.js           # HATEOAS response links
+└── frontend/
+    ├── Dockerfile             # Multi-stage frontend build and preview
+    ├── .dockerignore          # Frontend build-context exclusions
+    ├── src/api.js             # Browser API/authentication client
+    ├── src/App.jsx            # Routes and shared app UI
+    └── src/components/Projects/Projects.jsx  # Task CRUD and sign-in UI
 ```
 
 ## Installation and Setup
 
-The backend runs at `http://localhost:5000` and uses MongoDB Atlas for persistence. Start the React frontend separately at `http://localhost:5173`.
+### Run locally without Docker
 
-### 1. Clone or Navigate to the Project
+For a local run, have MongoDB listening on `localhost:27017`. The frontend calls the API at `http://localhost:5000`.
 
-```bash
-cd task-manager-api-24it086
-```
+1. Copy `.env.example` to `.env` and set a private, random `JWT_SECRET`. Keep `.env` untracked. The example URI points to local MongoDB.
+2. Install and start the backend:
 
-### 2. Install Dependencies
-
-```bash
-npm install
-```
-
-### 3. Configure Environment Variables
-
-Create a `.env` file in the project root:
-
-```
-MONGO_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>?retryWrites=true&w=majority
-PORT=5000
-```
-
-**Important:** Never commit `.env` to Git. Use `.env.example` as a template and add your actual credentials locally.
-
-### 4. Start the Server
-
-```bash
+```powershell
+npm ci
 node server.js
 ```
 
-You should see:
+3. In a second terminal, install and start the frontend:
 
+```powershell
+cd frontend
+npm ci
+npm run dev
 ```
-✅ MongoDB Connected
-Server is running on http://localhost:5000
-```
+
+Open `http://localhost:5173`; use the Docker instructions in [Practical 11](#practical-11-containerization-with-docker-compose) to run all services without installing MongoDB separately.
 
 ## Practical 7: Authentication and Middleware Pipeline
 
@@ -608,18 +593,9 @@ This is the key feature of Richardson Maturity Model Level 3.
 
 ## Environment Configuration
 
-### Using MongoDB Atlas
+### Optional MongoDB Atlas configuration
 
-1. Create a cluster on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-2. Create a database user with a strong password
-3. Whitelist your IP address
-4. Copy the connection string: `mongodb+srv://username:password@cluster.mongodb.net/dbname?retryWrites=true&w=majority`
-5. Add to `.env`:
-
-```
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/dbname?retryWrites=true&w=majority
-PORT=3000
-```
+For a non-Docker deployment, set `MONGO_URI` to your MongoDB Atlas connection string and `PORT=5000` in your local `.env` file. Keep credentials private and do not add them to source control. Docker Compose instead uses its MongoDB service; see Practical 11.
 
 ### .env.example
 
@@ -653,13 +629,11 @@ git push origin main
 
 ## Notes for Future Enhancements
 
-- Add JWT authentication for secure task management
 - Implement pagination for large task lists
 - Add filtering and sorting capabilities
 - Add rate limiting for production deployments
 - Implement comprehensive unit and integration tests
 - Add API versioning (e.g., `/v1/tasks`)
-- Add request validation middleware
 
 ---
 
@@ -728,6 +702,152 @@ Start the API using `node server.js` after configuring `.env` with `MONGO_URI` a
 Capture the actual Postman status/body and server terminal logs as evidence. In particular, include the POST HTTP 201 response alongside the API response timestamp and the later notification completion timestamp; include DELETE HTTP 200 alongside its event logs; and include cache-stat responses before and after mutations.
 
 ---
+
+## Practical 11: Containerization with Docker Compose
+
+### Objective and learning outcomes
+
+Containerize the React frontend, Express API, and MongoDB database as separate services that can be built and started together. This practical demonstrates reproducible image builds, service discovery on a bridge network, environment-based configuration, and persistent database storage.
+
+After completing it, you should be able to:
+
+- Build application images from Dockerfiles and distinguish images from running containers.
+- Define and operate related services with Docker Compose.
+- Let containers communicate through Compose service names on a user-defined bridge network.
+- Pass configuration to the backend through environment variables without baking secrets into images.
+- Persist MongoDB data in a named volume beyond the lifetime of a container.
+- Use a multi-stage frontend build to produce and serve a production Vite bundle.
+
+### Prerequisites
+
+- Docker Desktop (Windows/macOS) or Docker Engine with the Compose plugin.
+- Confirm Docker and Compose are available:
+
+```bash
+docker --version
+docker compose version
+```
+
+The backend and frontend Dockerfiles use Node.js 20 Alpine images. Docker builds install dependencies from the committed lockfiles using `npm ci`.
+
+### Architecture
+
+```text
+Browser (http://localhost:5173)
+  -> frontend container (built React app served by Vite preview)
+  -> backend container (Express API, port 5000)
+  -> mongodb container (MongoDB, port 27017)
+
+Browser API requests use the published host address http://localhost:5000.
+```
+
+All three services join the `app-network` bridge network. The backend connects to MongoDB at `mongodb://mongodb:27017/taskdb`; `mongodb` resolves to the database service inside Compose. MongoDB data is stored in the named `mongodb_data` volume, mounted at `/data/db`.
+
+### Configure and Start
+
+Compose reads `JWT_SECRET` from the repository-root `.env` file. On Windows PowerShell, create it with `Copy-Item .env.example .env`; on macOS/Linux, use `cp .env.example .env`. Replace the placeholder with a private random value. `docker-compose.yml` sets the backend's `MONGO_URI` to the Compose service address, overriding the local URI in the example file. Do not commit `.env`.
+
+From the repository root, build and start the frontend, backend, and database together:
+
+```bash
+docker compose up --build
+```
+
+To run it in the background, use `docker compose up --build -d`. The backend waits for the MongoDB health check before starting.
+
+### URLs and Container Ports
+
+- Frontend: `http://localhost:5173`
+- Backend health endpoint: `http://localhost:5000/`
+- Task manager UI: `http://localhost:5173/projects`
+- API health response: `Task Manager API Running`
+- MongoDB from the host: `mongodb://localhost:27017/taskdb`
+- MongoDB from the backend container: `mongodb://mongodb:27017/taskdb`
+
+The frontend's API requests run in the user's browser, so its existing `http://localhost:5000` API URL is correct when the backend port is published to the host. Inside the backend container, `localhost` would refer to that backend container itself; the Compose service name `mongodb` resolves to the database container on `app-network`.
+
+| Compose service | Host port | Container port | Purpose |
+|---|---:|---:|---|
+| `frontend` | 5173 | 5173 | React production build |
+| `backend` | 5000 | 5000 | Express REST API |
+| `mongodb` | 27017 | 27017 | MongoDB database |
+
+`EXPOSE` in a Dockerfile documents a container port; it does not publish that port. The Compose `ports` entries map host ports to container ports, making the frontend, API, and MongoDB reachable at the URLs above.
+
+### Inspect containers and logs
+
+List services and containers:
+
+```bash
+docker compose ps
+docker ps
+```
+
+Follow all service logs or a single service:
+
+```bash
+docker compose logs -f
+docker compose logs -f backend
+docker compose logs -f mongodb
+```
+
+### Test the application
+
+1. Open `http://localhost:5173`, then choose **Open the task manager** (or visit `/projects`).
+2. Register an account and sign in. Registration uses `POST /register`; sign-in uses `POST /login` and stores the returned token in browser local storage.
+3. Confirm a request without a token is rejected: `GET http://localhost:5000/tasks` returns HTTP 401. The frontend attaches the token as `Authorization: Bearer <token>`.
+4. In the signed-in task manager, create a task, refresh the list, edit it, mark it complete, and delete it. The UI uses `POST`, `GET`, `PUT`, and `DELETE` on `/tasks`; `PATCH /tasks/:id` is also available to API clients.
+5. Check the API root at `http://localhost:5000/`. For a direct API flow, use Postman with the endpoints and request bodies documented in [Practical 7](#practical-7-authentication-and-middleware-pipeline) and [API Endpoints](#api-endpoints).
+
+These are instructions for exercising the implemented features, not a claim that the live application was tested as part of this documentation update.
+
+### Rebuild after code changes
+
+```bash
+docker compose up --build
+```
+
+For a background run, use `docker compose up --build -d`. To rebuild one service only, use `docker compose build frontend` or `docker compose build backend`, then `docker compose up -d`.
+
+### Stop without deleting database data
+
+Stop and remove the containers and Compose network with:
+
+```bash
+docker compose down
+```
+
+The `mongodb_data` named volume is retained, so database contents survive `docker compose down` and container recreation. Do not add `-v` to the down command unless you intentionally want to delete the database volume and its data.
+
+### Docker Build Notes
+
+- Each project has a `.dockerignore` that excludes `node_modules`, `.env` files, `.git`, `.gitignore`, and npm debug logs. The backend ignore file also excludes the frontend folder from the backend build context.
+- Host `node_modules` are not copied into either image. Dependencies are installed inside the image for its Node/Linux environment, avoiding host-specific binaries and stale packages.
+- The frontend Dockerfile builds the React app in a Node 20 Alpine build stage, then copies the build output and preview runtime dependencies into a Node 20 Alpine runtime stage. Vite preview listens on `0.0.0.0:5173`.
+- The official `mongo:7` image stores database files at `/data/db`, backed by the named `mongodb_data` volume.
+
+### Troubleshooting
+
+- If Compose reports that `JWT_SECRET` is missing, create the repository-root `.env` from `.env.example` and set a private JWT secret.
+- If a port is already allocated, stop the process using host port 5173, 5000, or 27017 before starting Compose.
+- If the API cannot connect to MongoDB, inspect `docker compose logs backend mongodb` and `docker compose ps`; confirm MongoDB becomes healthy and the backend URI uses `mongodb`, not `localhost` or `127.0.0.1`.
+- If a service exits, inspect its logs with `docker compose logs <service>` and check the reported exit status with `docker compose ps -a`.
+- If changes do not appear, rebuild the affected image with `docker compose build --no-cache <service>` and restart with `docker compose up`.
+- If the frontend loads but API requests fail, confirm the backend is published on host port 5000 and visit `http://localhost:5000/`.
+- If services were already built before a source or dependency change, rebuild with `docker compose up --build`.
+- `docker compose down` preserves database data; `docker compose down -v` deletes the named volume.
+
+### Short viva questions and answers
+
+1. **What is a Docker image?** A read-only template containing the application and its runtime requirements, used to create containers.
+2. **What is a container?** An isolated running instance of an image with its own process environment.
+3. **What does a Dockerfile do?** It describes the steps and defaults used to build an image.
+4. **Why use Docker Compose?** It describes and operates the related application services, networks, and volumes together.
+5. **What is a bridge network?** A private network that lets containers communicate by service name while isolating that traffic from other networks.
+6. **Why use environment variables?** They configure a service at runtime without hard-coding deployment-specific values into source or an image.
+7. **What is a named volume?** Docker-managed persistent storage independent of a container's writable layer; `mongodb_data` preserves the database across container recreation.
+8. **How does the backend find MongoDB?** Through the Compose DNS service name `mongodb` on `app-network`, using `mongodb://mongodb:27017/taskdb`.
+9. **What is a multi-stage build?** A Dockerfile with separate build and runtime stages; the frontend compiles React in one stage and runs the built app from the runtime stage.
 
 ## License
 

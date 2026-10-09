@@ -1,0 +1,359 @@
+.projects {
+  min-height: 65vh;
+  padding: clamp(24px, 5vw, 54px);
+  border: 1px solid var(--line);
+  border-radius: 0 0 28px 28px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 18px 50px rgba(32, 48, 35, 0.06);
+  text-align: left;
+}
+
+.projects-heading {
+  margin-bottom: 30px;
+}
+
+.projects-heading h2 {
+  margin: 0 0 10px;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  font-weight: 800;
+  letter-spacing: -0.065em;
+}
+
+.projects-heading p:not(.eyebrow) {
+  max-width: 620px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.eyebrow {
+  color: #456c30;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.auth-form,
+.task-form {
+  width: min(100%, 680px);
+  padding: clamp(20px, 4vw, 32px);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(32, 48, 35, 0.06);
+}
+
+.auth-form {
+  margin: 0 auto;
+}
+
+.auth-form h3,
+.task-form h3,
+.task-list-header h3 {
+  margin: 0 0 22px;
+  color: var(--ink);
+  font-size: 1.35rem;
+  font-weight: 750;
+}
+
+.auth-form label,
+.task-form label {
+  display: block;
+  margin-bottom: 17px;
+  color: #34473a;
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
+.auth-form input,
+.task-form input:not([type='checkbox']),
+.task-form textarea,
+.task-form select {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 7px;
+  padding: 11px 13px;
+  border: 1px solid #c4d0bf;
+  border-radius: 11px;
+  background: #fcfdfb;
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.5;
+}
+
+.auth-form input::placeholder,
+.task-form input::placeholder,
+.task-form textarea::placeholder {
+  color: #66756a;
+  opacity: 1;
+}
+
+.task-form textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.auth-form input:focus,
+.task-form input:focus,
+.task-form textarea:focus,
+.task-form select:focus {
+  border-color: #668c4b;
+  outline: 3px solid rgba(102, 140, 75, 0.18);
+  outline-offset: 1px;
+}
+
+.auth-message {
+  margin: 0 0 16px;
+  color: #9b2d2d;
+  font-weight: 600;
+}
+
+.form-actions,
+.task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.projects button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #233b29;
+  border-radius: 999px;
+  background: #233b29;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  transition: transform 150ms ease, background-color 150ms ease;
+}
+
+.projects button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #31523a;
+}
+
+.projects button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.projects .button-secondary {
+  border-color: #cbd8c3;
+  background: #fff;
+  color: #294322;
+}
+
+.projects .button-secondary:hover:not(:disabled) {
+  background: #f2f7ed;
+}
+
+.button-danger {
+  border-color: #8a2929 !important;
+  background: #a73535 !important;
+}
+
+.button-danger:hover:not(:disabled) {
+  background: #842929 !important;
+}
+
+.auth-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+  padding: 14px 18px;
+  border: 1px solid #dbe7d2;
+  border-radius: 14px;
+  background: #f2f7ed;
+}
+
+.auth-bar p {
+  margin: 0;
+  color: #34473a;
+  font-weight: 600;
+}
+
+.task-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.task-form .checkbox-label {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  gap: 10px;
+  padding-top: 22px;
+}
+
+.checkbox-label input {
+  width: 18px;
+  height: 18px;
+  accent-color: #456c30;
+}
+
+.task-list {
+  margin-top: 34px;
+}
+
+.task-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.task-list-header h3 {
+  margin: 0;
+}
+
+.task-message {
+  padding: 18px;
+  border: 1px dashed #c4d0bf;
+  border-radius: 14px;
+  background: #fff;
+  color: #46554a;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-color: #d99a9a;
+  color: #842929;
+}
+
+.error-message p {
+  margin: 0;
+}
+
+.task-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 12px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(32, 48, 35, 0.045);
+}
+
+.task-card > div:first-child {
+  min-width: 0;
+}
+
+.task-card h4 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.task-card p {
+  margin: 8px 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.task-card small {
+  color: #4f6054;
+}
+
+.task-card-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.priority {
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 750;
+  text-transform: capitalize;
+}
+
+.priority-low {
+  background: #e4f2dc;
+  color: #28572d;
+}
+
+.priority-medium {
+  background: #fff1c9;
+  color: #674800;
+}
+
+.priority-high {
+  background: #ffe2df;
+  color: #842929;
+}
+
+.toast {
+  position: fixed;
+  z-index: 1200;
+  top: 88px;
+  right: 20px;
+  max-width: min(420px, calc(100% - 40px));
+  padding: 14px 18px;
+  border: 1px solid #dbe7d2;
+  border-radius: 14px;
+  background: #233b29;
+  color: #fff;
+  font-size: 0.94rem;
+  box-shadow: 0 12px 32px rgba(20, 35, 23, 0.2);
+}
+
+.toast-error {
+  border-color: #842929;
+  background: #842929;
+}
+
+@media (max-width: 620px) {
+  .projects {
+    padding: 22px 16px;
+    border-radius: 0 0 20px 20px;
+  }
+
+  .auth-form,
+  .task-form {
+    padding: 20px 16px;
+  }
+
+  .task-form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .task-form .checkbox-label {
+    min-height: 36px;
+    padding-top: 0;
+  }
+
+  .task-card {
+    flex-direction: column;
+  }
+
+  .task-actions {
+    width: 100%;
+  }
+
+  .task-actions button {
+    flex: 1;
+  }
+
+  .auth-bar,
+  .error-message {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,65 @@
+.repo-card {
+  background-color: #ffffff;
+  border: 1px solid #dbe2ed;
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dark-mode .repo-card {
+  background-color: #111827;
+  border-color: #334155;
+}
+
+.repo-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 46px rgba(15, 23, 42, 0.14);
+}
+
+.repo-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.repo-stars {
+  background-color: #eef4ff;
+  color: #0f4b9f;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.dark-mode .repo-stars {
+  background-color: #1f2937;
+  color: #cbd5e1;
+}
+
+.repo-card p {
+  color: #475569;
+  margin-bottom: 16px;
+  line-height: 1.75;
+}
+
+.dark-mode .repo-card p {
+  color: #cbd5e1;
+}
+
+.repo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+  color: #475569;
+}
+
+.dark-mode .repo-meta {
+  color: #cbd5e1;
+}
+
+.repo-button {
+  width: fit-content;
+}
