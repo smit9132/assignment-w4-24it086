@@ -24,7 +24,6 @@ require("./listeners");
 const taskRoutes = require('./routes/taskRoutes');
 const authRoutes = require('./routes/authRoutes');
 const cacheRoutes = require('./routes/cacheRoutes');
-  
 app.use("/", authRoutes);
 app.use("/", taskRoutes);
 app.use("/", cacheRoutes);
@@ -38,17 +37,20 @@ app.get("/", (req, res) => {
 const errorHandler = require("./middleware/errorHandler");
 app.use(errorHandler);
 
+// Export the Express app for testing.
+module.exports = { app };
 
-// Connect MongoDB and start server
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("✅ MongoDB Connected");
-
-    app.listen(PORT, () => {
-      console.log(`Server is running on http://localhost:${PORT}`);
+// Start the server only when this file is run directly (not imported).
+if (require.main === module) {
+  mongoose
+    .connect(process.env.MONGO_URI)
+    .then(() => {
+      console.log("✅ MongoDB Connected");
+      app.listen(PORT, () => {
+        console.log(`Server is running on http://localhost:${PORT}`);
+      });
+    })
+    .catch(() => {
+      console.error("❌ MongoDB connection failed. Please check your MONGO_URI and Atlas access settings.");
     });
-  })
-  .catch(() => {
-    console.error("❌ MongoDB connection failed. Please check your MONGO_URI and Atlas access settings.");
-  });
+}
