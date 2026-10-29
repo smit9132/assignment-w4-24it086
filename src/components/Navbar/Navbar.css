@@ -1,159 +1,115 @@
 .navbar {
   position: sticky;
+  z-index: 20;
   top: 0;
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
-  z-index: 1000;
-  transition: all 0.3s ease;
+  border-bottom: 1px solid rgba(228, 233, 225, 0.78);
+  background: rgba(249, 251, 247, 0.88);
+  backdrop-filter: blur(18px);
 }
 
 .navbar-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
   display: flex;
-  justify-content: space-between;
+  width: min(1320px, calc(100% - 96px));
+  height: 76px;
   align-items: center;
-  height: 70px;
+  justify-content: space-between;
+  margin: 0 auto;
 }
 
-/* Logo Styling */
+@media (min-width: 1500px) {
+  .navbar-container {
+    width: min(1420px, calc(100% - 144px));
+  }
+}
+
 .navbar-logo {
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -1px;
+  color: var(--ink);
+  font-family: 'Manrope', 'Segoe UI', sans-serif;
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.08em;
+  text-decoration: none;
 }
 
-.logo-text {
-  background: linear-gradient(135deg, #0077cc 0%, #00a3ff 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  transition: all 0.3s ease;
+.logo-text::after {
+  color: #7ea84c;
+  content: '.';
 }
 
-.navbar-logo:hover .logo-text {
-  transform: scale(1.05);
-}
-
-/* Navigation Menu */
 .navbar-menu {
   display: flex;
-  list-style: none;
-  gap: 40px;
+  align-items: center;
+  gap: clamp(18px, 3vw, 38px);
   margin: 0;
   padding: 0;
-  align-items: center;
-}
-
-.navbar-item {
-  position: relative;
+  list-style: none;
 }
 
 .navbar-link {
-  text-decoration: none;
-  color: #333;
-  font-weight: 500;
-  font-size: 14px;
-  letter-spacing: 0.5px;
-  transition: all 0.3s ease;
-  padding: 8px 0;
-  display: inline-block;
   position: relative;
-}
-
-.navbar-link:hover {
-  color: #0077cc;
-  transform: translateY(-2px);
-}
-
-/* Active Link Styling */
-.navbar-link.active {
-  color: #0077cc;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #657168;
+  font-size: 0.88rem;
   font-weight: 600;
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.navbar-link:hover,
+.navbar-link.active {
+  color: var(--ink);
 }
 
 .navbar-link.active::after {
-  content: "";
   position: absolute;
-  bottom: -5px;
-  left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #0077cc 0%, #00a3ff 100%);
-  border-radius: 2px;
-  animation: slideIn 0.3s ease forwards;
-}
-
-@keyframes slideIn {
-  from {
-    transform: scaleX(0);
-    transform-origin: left;
-  }
-  to {
-    transform: scaleX(1);
-    transform-origin: left;
-  }
-}
-
-/* Hover Animation */
-.navbar-link::before {
-  content: "";
-  position: absolute;
-  bottom: -5px;
+  bottom: 3px;
   left: 0;
-  width: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #0077cc 0%, #00a3ff 100%);
-  transition: width 0.3s ease;
-  border-radius: 2px;
+  height: 2px;
+  border-radius: 3px;
+  background: #8fc356;
+  content: '';
 }
 
-.navbar-link:hover::before {
-  width: 100%;
-}
-
-.navbar-link.active::before {
-  display: none;
-}
-
-/* Hamburger Menu */
 .hamburger {
   display: none;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
   flex-direction: column;
-  cursor: pointer;
-  gap: 6px;
+  gap: 5px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
 }
 
 .hamburger span {
-  width: 25px;
-  height: 3px;
-  background-color: #333;
-  border-radius: 3px;
-  transition: all 0.3s ease;
+  width: 16px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--ink);
+  transition: transform 160ms ease, opacity 160ms ease;
 }
 
-.hamburger.active span:nth-child(1) {
-  transform: rotate(45deg) translate(10px, 10px);
+.hamburger.active span:first-child {
+  transform: translateY(3.5px) rotate(45deg);
 }
 
 .hamburger.active span:nth-child(2) {
   opacity: 0;
 }
 
-.hamburger.active span:nth-child(3) {
-  transform: rotate(-45deg) translate(7px, -7px);
+.hamburger.active span:last-child {
+  transform: translateY(-3.5px) rotate(-45deg);
 }
 
-/* Mobile Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 760px) {
   .navbar-container {
-    padding: 0 15px;
-    height: 60px;
-  }
-
-  .navbar-logo {
-    font-size: 24px;
+    width: calc(100% - 36px);
+    height: 68px;
   }
 
   .hamburger {
@@ -162,84 +118,38 @@
 
   .navbar-menu {
     position: absolute;
-    top: 60px;
-    left: 0;
+    top: calc(100% + 1px);
     right: 0;
-    background: white;
+    left: 0;
+    display: none;
+    align-items: stretch;
     flex-direction: column;
     gap: 0;
-    padding: 20px 0;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    padding: 10px 18px 18px;
+    border-bottom: 1px solid var(--line);
+    background: #f9fbf7;
+    box-shadow: 0 20px 30px rgba(32, 48, 35, 0.08);
   }
 
   .navbar-menu.active {
-    max-height: 500px;
-  }
-
-  .navbar-item {
-    width: 100%;
-    text-align: center;
+    display: flex;
   }
 
   .navbar-link {
-    display: block;
-    padding: 15px 20px;
-    border-bottom: 1px solid #f0f0f0;
-  }
-
-  .navbar-link:hover {
-    background-color: #f8f9fa;
-  }
-
-  .navbar-link.active {
-    background-color: #f0f7ff;
+    min-height: 48px;
+    border-bottom: 1px solid var(--line);
   }
 
   .navbar-link.active::after {
-    display: none;
-  }
-
-  .navbar-link::before {
-    display: none;
-  }
-
-  .navbar-link.active::before {
-    display: none;
+    right: auto;
+    bottom: 0;
+    width: 28px;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 560px) {
   .navbar-container {
-    padding: 0 10px;
-    height: 55px;
-  }
-
-  .navbar-logo {
-    font-size: 20px;
-  }
-
-  .hamburger span {
-    width: 22px;
-    height: 2.5px;
-  }
-
-  .navbar-link {
-    font-size: 13px;
-    padding: 12px 15px;
+    width: calc(100% - 32px);
+    height: 64px;
   }
 }
-
-/* Smooth Scrolling */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Additional styling for navbar transparency on scroll (optional enhancement) */
-.navbar.scrolled {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 249, 250, 0.98) 100%);
-}
-

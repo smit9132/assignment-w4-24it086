@@ -1,58 +1,28 @@
-import { lazy, Suspense, useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { Link, Routes, Route } from 'react-router-dom';
 import './App.css';
 
 import Navbar from './components/Navbar/Navbar';
-import Hero from './components/Hero/Hero';
-import About from './components/About/About';
-import Skills from './components/Skills/Skills';
-import Footer from './components/Footer/Footer';
-import Achievements from './components/Achievements/Achievements';
-import Certifications from './components/Certifications/Certifications';
-import Education from './components/Education/Education';
-import Specialization from './components/Specialization/Specialization';
+import Home from './pages/Home';
 
 const Projects = lazy(() => import('./components/Projects/Projects'));
-const Contact = lazy(() => import('./components/Contact/Contact'));
-
-function Home() {
-  return (
-    <>
-      <Hero />
-      <About />
-      <Education />
-      <Skills />
-      <Specialization />
-      <Certifications />
-      <Achievements />
-      <Footer />
-    </>
-  );
-}
+const Contact = lazy(() => import('./pages/Contact'));
 
 function NotFound() {
   return (
     <div className="not-found">
-      <h1>404</h1>
-      <h2>Page Not Found</h2>
-      <p>The page you are looking for does not exist.</p>
+      <p className="not-found-code">404</p>
+      <h1>Looks like a wrong turn.</h1>
+      <p>The page you’re looking for isn’t here. Let’s get you back on track.</p>
+      <Link to="/" className="button button-primary">Back to home</Link>
     </div>
   );
 }
 
 function App() {
-  const [darkMode, setDarkMode] = useState(false);
-
-  const handleToggleTheme = () => {
-    setDarkMode((current) => !current);
-  };
-
   return (
-    <div className={darkMode ? 'app dark-mode' : 'app light-mode'}>
-      <Navbar
-        darkMode={darkMode}
-        onToggleTheme={handleToggleTheme}
-      />
+    <div className="app">
+      <Navbar />
 
       <main className="app-main">
         <Suspense

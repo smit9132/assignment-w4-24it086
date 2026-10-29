@@ -18,23 +18,29 @@ function Home() {
 
   return (
     <div className="container page-home">
-      <Header name="Smit Sanjava" themeColor="#0077cc" />
+      <Header name="Smit Sanjava" />
       <About />
       <Skills skillList={skills} />
 
       <section className="preview-section">
-        <h2>Projects Preview</h2>
-        <p>Explore a selection of projects built with modern web technologies.</p>
+        <div>
+          <p className="section-kicker">Featured build</p>
+          <h2>A task manager made to put React into practice.</h2>
+          <p>Create, update, prioritize, and organize tasks with a connected API.</p>
+        </div>
         <Link to="/projects" className="button button-primary">
-          View Projects
+          Try the task manager <span aria-hidden="true">↗</span>
         </Link>
       </section>
 
-      <section className="preview-section">
-        <h2>Contact Preview</h2>
-        <p>Send a message or ask about internships and collaboration opportunities.</p>
+      <section className="contact-banner">
+        <div>
+          <p className="section-kicker">Have a project in mind?</p>
+          <h2>Let’s make something useful.</h2>
+          <p>I’m always happy to talk about ideas, internships, and learning together.</p>
+        </div>
         <Link to="/contact" className="button button-secondary">
-          Contact Me
+          Say hello <span aria-hidden="true">↗</span>
         </Link>
       </section>
 

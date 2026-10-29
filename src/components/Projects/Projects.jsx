@@ -113,36 +113,72 @@ function Projects() {
     <section className="projects" id="projects">
       <Toast message={notice.message} type={notice.type} />
       <div className="projects-heading">
-        <p className="eyebrow">Practical 6</p>
-        <h2>Task Management</h2>
-        <p>Tasks are loaded from the Express API and persisted in MongoDB Atlas.</p>
+        <p className="eyebrow">A practical build · React + API</p>
+        <h1>Task Manager</h1>
+        <p>
+          A simple place to capture what needs doing. Add a task, set its
+          priority, and keep it moving.
+        </p>
       </div>
 
-      <form className="task-form" onSubmit={handleSubmit}>
-        <h3>{editingId ? "Update task" : "Create a task"}</h3>
-        <label>Title<input name="title" value={formData.title} onChange={handleChange} required /></label>
-        <label>Description<textarea name="description" value={formData.description} onChange={handleChange} rows="3" /></label>
-        <div className="task-form-row">
-          <label>Priority<select name="priority" value={formData.priority} onChange={handleChange}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
-          <label className="checkbox-label"><input type="checkbox" name="completed" checked={formData.completed} onChange={handleChange} /> Completed</label>
-        </div>
-        <div className="form-actions">
-          <button type="submit" disabled={Boolean(operation)}>{operation === "create" ? "Creating..." : editingId ? (operation ? "Updating..." : "Update task") : "Create task"}</button>
-          {editingId && <button type="button" className="button-secondary" onClick={cancelEditing} disabled={Boolean(operation)}>Cancel</button>}
-        </div>
-      </form>
+      <div className="task-workspace">
+        <form className="task-form" onSubmit={handleSubmit}>
+          <div className="task-form-heading">
+            <span className="form-step">{editingId ? "02" : "01"}</span>
+            <div>
+              <h2>{editingId ? "Edit your task" : "Add a new task"}</h2>
+              <p>Keep it short and easy to act on.</p>
+            </div>
+          </div>
+          <label htmlFor="task-title">Task title</label>
+          <input id="task-title" name="title" value={formData.title} onChange={handleChange} placeholder="What needs to get done?" required maxLength={120} />
+          <label htmlFor="task-description">A few details <span>(optional)</span></label>
+          <textarea id="task-description" name="description" value={formData.description} onChange={handleChange} rows="4" placeholder="Add a note or helpful context..." maxLength={1000} />
+          <div className="task-form-row">
+            <label htmlFor="task-priority">Priority
+              <select id="task-priority" name="priority" value={formData.priority} onChange={handleChange}>
+                <option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option>
+              </select>
+            </label>
+            <label className="checkbox-label"><input type="checkbox" name="completed" checked={formData.completed} onChange={handleChange} /> Mark complete</label>
+          </div>
+          <div className="form-actions">
+            <button className="task-submit" type="submit" disabled={Boolean(operation)}>
+              {operation === "create" ? "Adding task..." : editingId ? (operation ? "Saving..." : "Save changes") : "Add task"}
+              {!operation && <span aria-hidden="true">↗</span>}
+            </button>
+            {editingId && <button type="button" className="button-secondary" onClick={cancelEditing} disabled={Boolean(operation)}>Cancel</button>}
+          </div>
+        </form>
 
-      <div className="task-list" aria-live="polite">
-        <div className="task-list-header"><h3>Saved tasks</h3><button type="button" className="button-secondary" onClick={loadTasks} disabled={loading || Boolean(operation)}>Refresh</button></div>
-        {loading && <p className="task-message">Loading tasks...</p>}
-        {!loading && error && <div className="task-message error-message"><p>Unable to load tasks: {error}</p><button type="button" onClick={loadTasks}>Try again</button></div>}
-        {!loading && !error && tasks.length === 0 && <p className="task-message">No tasks yet. Create the first one above.</p>}
-        {!loading && !error && tasks.map((task) => (
-          <article className="task-card" key={task._id}>
-            <div><div className="task-card-title"><h4>{task.title}</h4><span className={`priority priority-${task.priority}`}>{task.priority}</span></div><p>{task.description || "No description"}</p><small>{task.completed ? "Completed" : "In progress"} | {task.createdAt ? new Date(task.createdAt).toLocaleDateString() : "Date unavailable"}</small></div>
-            <div className="task-actions"><button type="button" onClick={() => startEditing(task)} disabled={Boolean(operation)}>Edit</button><button type="button" className="button-danger" onClick={() => handleDelete(task._id)} disabled={operation === `delete-${task._id}`}>{operation === `delete-${task._id}` ? "Deleting..." : "Delete"}</button></div>
-          </article>
-        ))}
+        <div className="task-list" aria-live="polite">
+          <div className="task-list-header">
+            <div><p className="section-kicker">Your list</p><h2>Tasks in motion</h2></div>
+            <button type="button" className="refresh-button" onClick={loadTasks} disabled={loading || Boolean(operation)} aria-label="Refresh tasks">↻</button>
+          </div>
+          {loading && <p className="task-message" role="status">Loading your tasks...</p>}
+          {!loading && error && <div className="task-message error-message"><p>Couldn’t load tasks: {error}</p><button type="button" className="button-secondary" onClick={loadTasks}>Try again</button></div>}
+          {!loading && !error && tasks.length === 0 && (
+            <div className="task-empty">
+              <span aria-hidden="true">✳</span>
+              <h3>A fresh start.</h3>
+              <p>No tasks yet. Add the first one and give it a priority.</p>
+            </div>
+          )}
+          {!loading && !error && tasks.map((task) => (
+            <article className={`task-card${task.completed ? " is-complete" : ""}`} key={task._id}>
+              <div className="task-card-content">
+                <div className="task-card-title"><h3>{task.title}</h3><span className={`priority priority-${task.priority}`}>{task.priority}</span></div>
+                <p>{task.description || "No extra details"}</p>
+                <small><span className={`task-state${task.completed ? " complete" : ""}`} />{task.completed ? "Completed" : "In progress"} <span aria-hidden="true">·</span> {task.createdAt ? new Date(task.createdAt).toLocaleDateString() : "Date unavailable"}</small>
+              </div>
+              <div className="task-actions">
+                <button type="button" className="edit-task" onClick={() => startEditing(task)} disabled={Boolean(operation)}>Edit</button>
+                <button type="button" className="delete-task" onClick={() => handleDelete(task._id)} disabled={operation === `delete-${task._id}`}>{operation === `delete-${task._id}` ? "Deleting..." : "Delete"}</button>
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   );
