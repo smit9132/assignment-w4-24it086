@@ -62,7 +62,7 @@ afterEach((done) => {
 
 describe("GET /tasks without authentication", () => {
   it("should return 401 when authentication header is missing", async () => {
-    await request(server).get("/tasks").expect(200);
+    await request(server).get("/tasks").expect(401);
   });
 });
 
