@@ -13,19 +13,23 @@ jobs:
       contents: read
       pull-requests: read
 
+    env:
+      JWT_SECRET: 977defcaba4870b863eb593cd0c99453822f9ba0547de8a9fff7735dbd3dd55f5a751eeaf8db87fa410478ab293fea9116a822835d70846d2ae0a86628a4e92a
+      MONGO_URI: mongodb://localhost:27017/taskdb_test
+      PORT: 5000
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js 18
+      - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+          cache: "npm"
 
-      - name: Install backend dependencies
-        run: npm install
-        working-dir: .
+      - name: Install dependencies
+        run: npm ci
 
       - name: Run automated tests
         run: npm test
-        working-dir: .

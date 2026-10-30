@@ -1,5 +1,7 @@
 # Task Manager API and Docker Compose Application
 
+[![CI Pipeline](https://github.com/smit9132/assignment-w4-24it086/actions/workflows/ci.yml/badge.svg)](https://github.com/smit9132/assignment-w4-24it086/actions/workflows/ci.yml)
+
 This project provides a React task-management frontend and a Node.js/Express REST API backed by MongoDB. It demonstrates task CRUD, JWT authentication, caching, event-driven notifications, HATEOAS responses, and containerization with Docker Compose.
 
 This API implements the **Richardson Maturity Model Level 3**, achieving resource-oriented URLs, proper HTTP methods/status codes, and HATEOAS (Hypermedia As The Engine Of Application State) support.
@@ -853,102 +855,115 @@ The `mongodb_data` named volume is retained, so database contents survive `docke
 
 ISC
 
-## Practical 12 — GitHub Actions CI Pipeline
+## Practical 12 — GitHub Actions CI/CD Pipeline
 
 ### Objective and Overview
-This practical implements a GitHub Actions CI pipeline that automatically runs on every push to the `main` branch, installing backend dependencies using `npm install`, running automated tests, and reporting pass/fail status. The pipeline ensures the Task Manager API backend remains functional across changes and provides immediate feedback on test failures.
+
+This practical implements a GitHub Actions CI pipeline that automatically runs on every push to the `main` branch. It checks out the repository, installs backend dependencies using `npm ci`, runs automated Jest tests, and reports pass/fail status with a green ✅ or red ❌ in the GitHub Actions tab.
+
+The pipeline ensures the Task Manager API backend remains functional across code changes and gives immediate feedback on failures — without needing a local MongoDB server.
 
 ### CI Workflow Architecture
+
 - **Workflow file**: `.github/workflows/ci.yml`
-- **Trigger**: Push to `main` branch, plus manual `workflow_dispatch` invocation
+- **Trigger**: Every push to `main` branch, plus manual `workflow_dispatch` invocation
 - **Runner**: `ubuntu-latest`
+- **Node.js version**: 20 (matches Dockerfile and `jest@30` requirements)
 - **Steps**:
-  1. `actions/checkout@v4` — checks out the repository
-  2. `actions/setup-node@v4` — sets up Node.js 18
-  3. `npm install` — installs backend dependencies
-  4. `npm test` — runs the Jest test suite
-- The workflow uses a single `test` job that installs dependencies and runs the test suite. If any test fails, the job reports a red X; if all tests pass, a green checkmark appears.
+  1. `actions/checkout@v4` — checks out the repository code
+  2. `actions/setup-node@v4` (Node 20, npm cache) — sets up Node.js with dependency caching
+  3. `npm ci` — installs exact dependencies from `package-lock.json` (reproducible)
+  4. `npm test` — runs the full Jest test suite with `--forceExit`
 
-### Workflow File Path
-`.github/workflows/ci.yml`
+### How Tests Run Without MongoDB
 
-### Backend / Frontend Directory Structure
-- **Backend**: Root directory (`/`)
-  - `server.js` — Express app entry point (exports `app` separately from startup)
-  - `package.json` — backend dependencies, test script `jest`
-  - `routes/` — Express routers (auth, task, cache)
-  - `middleware/` — auth, error, logger, validation middleware
-  - `models/` — Mongoose User and Task schemas
-  - `controllers/` — auth and task request handlers
-  - `task_api.test.js` — Jest automated tests
-- **Frontend**: `frontend/` directory
-  - `package.json` — Vite/React dependencies
-  - `src/` — React components and pages
-  - `Dockerfile` — Frontend Docker image
+The test file (`task_api.test.js`) mocks both the `User` and `Task` Mongoose models using `jest.mock()`. This means no real database connection is needed — the models are replaced with in-memory fake functions. The Express app is imported directly and tested with [Supertest](https://github.com/ladjs/supertest), which makes real HTTP requests in-process without starting a server manually.
 
-### Dependency Installation and Testing Commands
+### Workflow Environment Variables
+
+Since `.env` is not committed to Git, the CI workflow sets the required environment variables directly:
+
+```yaml
+env:
+  JWT_SECRET: ci-test-secret-key-for-github-actions
+  MONGO_URI: mongodb://localhost:27017/taskdb_test
+  PORT: 5000
+```
+
+### Dependency Installation and Test Commands
+
 ```bash
-# Install backend dependencies
-npm install
+# Install exact versions from lock file (reproducible CI install)
+npm ci
 
-# Run automated tests
+# Run automated tests (Jest with --forceExit to avoid hangs)
 npm test
 ```
 
-### How to Run the Workflow Locally
-```bash
-# Install dependencies
-npm install
+### Running Tests Locally
 
-# Run tests
+```bash
+# From the project root directory
+npm install
 npm test
 ```
 
-To simulate the GitHub Actions workflow locally, you can run the above commands on the `main` branch. The workflow uses Node.js 18 and runs `npm test` via Jest.
+All 6 tests should pass in about 1–2 seconds:
 
-### Viewing Runs under GitHub → Actions
+```
+PASS ./task_api.test.js
+  GET /tasks without authentication
+    ✓ should return 401 when authentication header is missing
+  POST /tasks without authentication
+    ✓ should return 401 when authentication header is missing
+  POST /register
+    ✓ should register a new user
+    ✓ should return 400 when email is missing
+    ✓ should return 400 when password is missing
+  POST /login
+    ✓ should return 401 with invalid credentials
+
+Tests: 6 passed, 6 total
+```
+
+### Viewing Runs Under GitHub → Actions
+
 1. Push changes to the `main` branch
 2. Navigate to the repository on GitHub
 3. Click the **Actions** tab
-4. Select the "CI Pipeline" workflow run
-5. View the pass/fail status, test output, and logs
-
-### Deliberately Failing and Subsequently Fixed Test
-- **Initial state**: A test asserting `GET /tasks` returns 200 without authentication would fail with a 401 response, demonstrating the red X in GitHub Actions.
-- **Root cause**: The `authMiddleware` requires a `Bearer` token; requests without authentication correctly return 401.
-- **Fix**: The test assertion is corrected to expect `401` when the authentication header is missing, demonstrating the green checkmark.
-- **Verification**: After correction, `npm test` runs all tests successfully, and the GitHub Actions pipeline reports a passing status.
-
-### CI vs CD
-- **Continuous Integration (CI)**: Automated testing and validation of code changes on every push. The CI pipeline checks that tests pass, dependencies install correctly, and the application behaves as expected. It does not deploy to production; it validates quality.
-- **Continuous Deployment (CD)**: Automated deployment of validated code to production or staging environments. Practical 11 (Docker Compose) provides the CD foundation, but Practical 12 focuses on CI only.
+4. Select the **CI Pipeline** workflow
+5. Click the latest run to see step-by-step logs
+6. A green ✅ means all tests passed; a red ❌ means at least one test failed
 
 ### GitHub Actions Status Badge
-The status badge for this workflow can be embedded in `README.md`:
+
+The badge at the top of this README shows the live pipeline status:
+
 ```markdown
-[![CI Pipeline](https://github.com/smit9132/assignment-w4-24it086/actions/workflows/ci.yml/badge.svg)](https://github.com/smit9132/assignment-w4-24it086/actions)
+[![CI Pipeline](https://github.com/smit9132/assignment-w4-24it086/actions/workflows/ci.yml/badge.svg)](https://github.com/smit9132/assignment-w4-24it086/actions/workflows/ci.yml)
 ```
 
-### Failed and Passed Pipeline Screenshots
-| Status | Description |
-|--------|-------------|
-| ❌ Failed | Pipeline run with a deliberately incorrect test assertion (expecting 200 instead of 401). The run shows a red X and test failure logs. |
-| ✅ Passed | Pipeline run after the assertion is corrected. The run shows a green checkmark and all tests passing. |
+### CI vs CD
 
-### Practical 12 Learning Outcome
-By the end of this practical, students will understand how to:
-- Set up a GitHub Actions CI pipeline for a Node.js Express application
-- Write meaningful automated tests with Jest and Supertest
-- Export the Express app separately from server startup for testability
-- Configure automated testing in a CI/CD environment
-- Interpret pass/fail status from CI runs
-- Distinguish between CI (testing/validation) and CD (deployment)
-- Debug test failures and fix incorrect assertions while preserving existing functionality
+| Concept | Description |
+|---------|-------------|
+| **Continuous Integration (CI)** | Automatically test every code push. Catches bugs early before merging. |
+| **Continuous Deployment (CD)** | Automatically deploy tested code to production/staging. Practical 11 (Docker Compose) provides the deployment foundation. |
+
+Practical 12 focuses on **CI only** — automated testing, not deployment.
+
+### Practical 12 Key Learning Outcomes
+
+- Set up a GitHub Actions CI pipeline for a Node.js/Express API
+- Write automated tests with Jest and Supertest that run without a real database
+- Export the Express app separately from server startup to make it testable
+- Use `jest.mock()` to isolate tests from MongoDB
+- Configure `--forceExit` to prevent Jest from hanging in CI
+- Use `npm ci` instead of `npm install` for reproducible CI builds
+- Provide environment variables in the workflow YAML instead of `.env`
+- Interpret green ✅ and red ❌ pipeline run status
+- Debug and fix CI failures (wrong Node.js version, hanging process, missing env vars)
+
 ---
-ISC
 
----
-
-**For academic practical purposes and demonstration of Richardson Maturity Model concepts.**
-P r a c t i c a l   1 2   C I / C D  
- 
+**For academic practical purposes and demonstration of CI/CD pipeline concepts.**
