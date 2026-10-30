@@ -42,22 +42,42 @@ beforeAll((done) => {
 });
 
 afterAll((done) => {
-  server.close(done);
+  server.close(() => {
+    if (mongoose.connection.readyState !== 0) {
+      mongoose.disconnect().then(() => done()).catch(() => done());
+    } else {
+      done();
+    }
+  });
 });
 
-beforeEach((done) => {
+beforeEach(async () => {
   const db = mongoose.connection;
   if (db.readyState === 0) {
-    mongoose.connect("mongodb://localhost:27017/taskdb_test", {});
+    try {
+      await mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/taskdb_test");
+    } catch (err) {
+      // MongoDB connection failure should not block mocked tests
+    }
   }
-  db.dropDatabase();
-  done();
+  if (db.readyState === 1) {
+    try {
+      await db.dropDatabase();
+    } catch (err) {
+      // ignore
+    }
+  }
 });
 
-afterEach((done) => {
+afterEach(async () => {
   const db = mongoose.connection;
-  db.dropDatabase();
-  done();
+  if (db.readyState === 1) {
+    try {
+      await db.dropDatabase();
+    } catch (err) {
+      // ignore
+    }
+  }
 });
 
 describe("GET /tasks without authentication", () => {

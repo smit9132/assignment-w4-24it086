@@ -13,6 +13,12 @@ jobs:
       contents: read
       pull-requests: read
 
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+
     env:
       JWT_SECRET: 977defcaba4870b863eb593cd0c99453822f9ba0547de8a9fff7735dbd3dd55f5a751eeaf8db87fa410478ab293fea9116a822835d70846d2ae0a86628a4e92a
       MONGO_URI: mongodb://localhost:27017/taskdb_test
@@ -26,10 +32,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run automated tests
         run: npm test
