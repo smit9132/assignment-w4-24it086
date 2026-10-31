@@ -3,6 +3,7 @@ import {
   AUTH_EXPIRED_EVENT,
   createTask,
   deleteTask,
+  generateAiDescription,
   getAuthToken,
   getTasks,
   login,
@@ -27,10 +28,11 @@ function Projects() {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [authLoading, setAuthLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
 
   const showNotice = (message, type = "success") => {
     setNotice({ message, type });
-    window.setTimeout(() => setNotice({ message: "", type: "success" }), 3500);
+    window.setTimeout(() => setNotice({ message: "", type: "success" }), 4000);
   };
 
   const loadTasks = async () => {
@@ -118,6 +120,39 @@ function Projects() {
     setFormData((current) => ({ ...current, [name]: type === "checkbox" ? checked : value }));
   };
 
+  const handleGenerateAiDescription = async () => {
+    const trimmedTitle = formData.title.trim();
+    if (!trimmedTitle) {
+      showNotice("Please enter a task title first.", "error");
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const response = await generateAiDescription(trimmedTitle);
+      if (response && response.description) {
+        setFormData((current) => ({
+          ...current,
+          description: response.description,
+        }));
+        if (response.isFallback) {
+          showNotice("Description generated! Please review and edit before saving.", "success");
+        } else {
+          showNotice("AI description generated! Please review and edit before saving.", "success");
+        }
+      } else {
+        showNotice("Could not generate description. Please enter one manually.", "error");
+      }
+    } catch (requestError) {
+      showNotice(
+        requestError.message || "Failed to generate AI description. Please try again or type manually.",
+        "error"
+      );
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!formData.title.trim()) {
@@ -180,9 +215,9 @@ function Projects() {
     <section className="projects" id="projects">
       <Toast message={notice.message} type={notice.type} />
       <div className="projects-heading">
-        <p className="eyebrow">Practical 6</p>
-        <h2>Task Management</h2>
-        <p>Tasks are loaded from the Express API and persisted in MongoDB.</p>
+        <p className="eyebrow">Practical 13</p>
+        <h2>Task Management with AI</h2>
+        <p>Manage your tasks with AI-assisted description generation powered by OpenAI gpt-4o-mini.</p>
       </div>
 
       {!token ? (
@@ -205,32 +240,109 @@ function Projects() {
             <button type="button" className="button-secondary" onClick={handleLogout}>Sign out</button>
           </div>
 
-      <form className="task-form" onSubmit={handleSubmit}>
-        <h3>{editingId ? "Update task" : "Create a task"}</h3>
-        <label>Title<input name="title" value={formData.title} onChange={handleChange} required /></label>
-        <label>Description<textarea name="description" value={formData.description} onChange={handleChange} rows="3" /></label>
-        <div className="task-form-row">
-          <label>Priority<select name="priority" value={formData.priority} onChange={handleChange}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
-          <label className="checkbox-label"><input type="checkbox" name="completed" checked={formData.completed} onChange={handleChange} /> Completed</label>
-        </div>
-        <div className="form-actions">
-          <button type="submit" disabled={Boolean(operation)}>{operation === "create" ? "Creating..." : editingId ? (operation ? "Updating..." : "Update task") : "Create task"}</button>
-          {editingId && <button type="button" className="button-secondary" onClick={cancelEditing} disabled={Boolean(operation)}>Cancel</button>}
-        </div>
-      </form>
+          <form className="task-form" onSubmit={handleSubmit}>
+            <h3>{editingId ? "Update task" : "Create a task"}</h3>
+            <label>
+              Title
+              <input
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                placeholder="e.g. Complete DBMS assignment"
+                required
+              />
+            </label>
 
-      <div className="task-list" aria-live="polite">
-        <div className="task-list-header"><h3>Saved tasks</h3><button type="button" className="button-secondary" onClick={loadTasks} disabled={loading || Boolean(operation)}>Refresh</button></div>
-        {loading && <p className="task-message">Loading tasks...</p>}
-        {!loading && error && <div className="task-message error-message"><p>Unable to load tasks: {error}</p><button type="button" onClick={loadTasks}>Try again</button></div>}
-        {!loading && !error && tasks.length === 0 && <p className="task-message">No tasks yet. Create the first one above.</p>}
-        {!loading && !error && tasks.map((task) => (
-          <article className="task-card" key={task._id}>
-            <div><div className="task-card-title"><h4>{task.title}</h4><span className={`priority priority-${task.priority}`}>{task.priority}</span></div><p>{task.description || "No description"}</p><small>{task.completed ? "Completed" : "In progress"} | {task.createdAt ? new Date(task.createdAt).toLocaleDateString() : "Date unavailable"}</small></div>
-            <div className="task-actions"><button type="button" onClick={() => startEditing(task)} disabled={Boolean(operation)}>Edit</button><button type="button" className="button-danger" onClick={() => handleDelete(task._id)} disabled={operation === `delete-${task._id}`}>{operation === `delete-${task._id}` ? "Deleting..." : "Delete"}</button></div>
-          </article>
-        ))}
-      </div>
+            <div className="ai-trigger-container">
+              <button
+                type="button"
+                className="button-ai"
+                onClick={handleGenerateAiDescription}
+                disabled={aiLoading || !formData.title.trim() || Boolean(operation)}
+              >
+                {aiLoading ? "Generating Description..." : "✨ Generate Description"}
+              </button>
+            </div>
+
+            {aiLoading && (
+              <div className="ai-loading-indicator" role="status" aria-live="polite">
+                <span className="ai-spinner" aria-hidden="true"></span>
+                <span>Generating description with AI...</span>
+              </div>
+            )}
+
+            <label>
+              Description
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows="3"
+                placeholder="Editable task description (type manually or use 'Generate Description' above)"
+              />
+            </label>
+
+            <p className="ai-disclaimer">
+              ℹ️ <strong>AI-generated suggestion:</strong> Please review and edit the description before saving.
+            </p>
+
+            <div className="task-form-row">
+              <label>
+                Priority
+                <select name="priority" value={formData.priority} onChange={handleChange}>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </label>
+              <label className="checkbox-label">
+                <input type="checkbox" name="completed" checked={formData.completed} onChange={handleChange} /> Completed
+              </label>
+            </div>
+            <div className="form-actions">
+              <button type="submit" disabled={Boolean(operation) || aiLoading}>
+                {operation === "create" ? "Creating..." : editingId ? (operation ? "Updating..." : "Update task") : "Create task"}
+              </button>
+              {editingId && (
+                <button type="button" className="button-secondary" onClick={cancelEditing} disabled={Boolean(operation) || aiLoading}>
+                  Cancel
+                </button>
+              )}
+            </div>
+          </form>
+
+          <div className="task-list" aria-live="polite">
+            <div className="task-list-header">
+              <h3>Saved tasks</h3>
+              <button type="button" className="button-secondary" onClick={loadTasks} disabled={loading || Boolean(operation)}>Refresh</button>
+            </div>
+            {loading && <p className="task-message">Loading tasks...</p>}
+            {!loading && error && (
+              <div className="task-message error-message">
+                <p>Unable to load tasks: {error}</p>
+                <button type="button" onClick={loadTasks}>Try again</button>
+              </div>
+            )}
+            {!loading && !error && tasks.length === 0 && <p className="task-message">No tasks yet. Create the first one above.</p>}
+            {!loading && !error && tasks.map((task) => (
+              <article className="task-card" key={task._id}>
+                <div>
+                  <div className="task-card-title">
+                    <h4>{task.title}</h4>
+                    <span className={`priority priority-${task.priority}`}>{task.priority}</span>
+                  </div>
+                  <p>{task.description || "No description"}</p>
+                  <small>{task.completed ? "Completed" : "In progress"} | {task.createdAt ? new Date(task.createdAt).toLocaleDateString() : "Date unavailable"}</small>
+                </div>
+                <div className="task-actions">
+                  <button type="button" onClick={() => startEditing(task)} disabled={Boolean(operation)}>Edit</button>
+                  <button type="button" className="button-danger" onClick={() => handleDelete(task._id)} disabled={operation === `delete-${task._id}`}>
+                    {operation === `delete-${task._id}` ? "Deleting..." : "Delete"}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
         </>
       )}
     </section>

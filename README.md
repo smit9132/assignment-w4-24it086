@@ -966,4 +966,248 @@ Practical 12 focuses on **CI only** â€” automated testing, not deployment.
 
 ---
 
-**For academic practical purposes and demonstration of CI/CD pipeline concepts.**
+**For academic practical purposes and demonstration of CI/CD pipeline concepts.**
+---
+
+## Practical 13 — AI API Integration into a Web Application
+
+### Objective and Overview
+
+This practical integrates an AI-powered assistant into the existing Task Management web application. Users can enter a task title (e.g., *"Complete DBMS assignment"*) and click **? Generate Description**. The backend calls the OpenAI API using the official openai Node.js SDK and the gpt-4o-mini model to synthesize a concise, actionable task description.
+
+The generated description is inserted into an **editable textarea**, giving the user full autonomy to accept, edit, or replace the suggestion before saving the task to MongoDB.
+
+### Architecture and Request Flow
+
+`	ext
+[ React Frontend ]
+  ¦
+  ¦  1. User enters title & clicks "Generate Description"
+  ¦  2. POST /api/ai/generate-description { title: "Complete DBMS assignment" }
+  ?
+[ Express Backend Server ]
+  ¦
+  +-? [ Rate Limiting Middleware ]
+  ¦     +-? Exceeded 1 request/task/minute? --? Return 429 Too Many Requests
+  ¦
+  +-? [ Validation Check ]
+  ¦     +-? Missing / blank title?          --? Return 400 Bad Request
+  ¦
+  +-? [ Secure API Key Verification ]
+  ¦     +-? Missing / placeholder key?       --? Return 200 Graceful Fallback Template
+  ¦
+  +-? [ OpenAI SDK Integration ]
+        ¦
+        +-? Model: gpt-4o-mini (10s timeout)
+        +-? System Prompt: Concise, plain text, actionable
+        +-? Payload: Only sanitized task title (No tokens/emails)
+        ?
+   [ Success / Fallback Response ]
+        ¦
+        ?
+[ React Form populated with editable description & user disclaimer ]
+`
+
+### Backend Endpoint Specification
+
+#### Endpoint
+POST /api/ai/generate-description
+
+#### Headers
+Content-Type: application/json
+
+#### Request Body
+`json
+{
+  "title": "Complete DBMS assignment"
+}
+`
+
+#### Success Response (200 OK)
+`json
+{
+  "success": true,
+  "description": "Complete the assigned DBMS exercises focusing on ER diagram design, normalization to 3NF, and writing optimized SQL queries."
+}
+`
+
+#### Validation Error (400 Bad Request)
+`json
+{
+  "success": false,
+  "message": "Task title is required to generate a description."
+}
+`
+
+#### Rate Limit Exceeded (429 Too Many Requests)
+`json
+{
+  "success": false,
+  "message": "Rate limit reached. Maximum one AI generation request per task per minute. Please wait 45 second(s) before trying again.",
+  "retryAfter": 45
+}
+`
+
+#### Fallback Response (200 OK - Graceful Degradation)
+Returned when OPENAI_API_KEY is not set or OpenAI is unreachable:
+`json
+{
+  "success": true,
+  "description": "Plan and execute tasks related to 'Complete DBMS assignment'. Review objectives, organize required resources, and complete deliverables on time.",
+  "isFallback": true,
+  "message": "AI service key is not configured on the server. A fallback template description has been provided."
+}
+`
+
+### Secure API Key Configuration
+
+The OpenAI API key is stored **strictly on the backend** in the root .env file:
+
+`env
+OPENAI_API_KEY=your_actual_api_key_here
+`
+
+#### Security Guardrails
+1. **Never in Frontend**: The React client has no access to the API key. No VITE_ variables are used for OpenAI credentials.
+2. **Never in Git**: .env is explicitly ignored in .gitignore:
+   `
+   .env
+   .env.*
+   !.env.example
+   `
+3. **Never in Docker Images**: .dockerignore prevents .env from being copied during image builds.
+4. **Safe Template Provided**: .env.example contains placeholders without credentials:
+   `env
+   MONGO_URI=mongodb://localhost:27017/taskdb
+   PORT=5000
+   JWT_SECRET=replace_with_a_private_random_secret
+   OPENAI_API_KEY=your_actual_api_key_here
+   `
+5. **No Secret Logging**: The backend never prints, logs, or returns the API key in terminal logs or error responses.
+
+### How to Configure Your OpenAI API Key
+
+1. Sign in to your [OpenAI Platform](https://platform.openai.com) account.
+2. Navigate to **API Keys** and generate a new secret key.
+3. Open your local .env file in the project root.
+4. Replace your_actual_api_key_here with your secret key:
+   `env
+   OPENAI_API_KEY=sk-proj-...
+   `
+5. Restart your backend server (
+ode server.js).
+6. *If you do not have an API key*, the application automatically uses the built-in structured fallback mechanism, ensuring the entire app and all tests work without error.
+
+### Frontend Features
+
+The task creation form in rontend/src/components/Projects/Projects.jsx includes:
+- **Task Title Input**: Title input field where users enter their task name.
+- **? Generate Description Button**: Calls the backend AI route. Disabled when title is blank or an operation is in progress.
+- **Loading Indicator**: Displays an animated spinner and status message (*"Generating description with AI..."*) while awaiting response.
+- **Editable Textarea**: Automatically receives the generated description. The user can edit every word, delete it, or add additional notes.
+- **AI Disclaimer**: Displays a visible notice:
+  > *?? **AI-generated suggestion:** Please review and edit the description before saving.*
+- **Notification Toast**: Informs the user when description is ready or displays a friendly error/fallback notice.
+- **Manual Mode Preserved**: Users can type descriptions manually and save tasks without ever touching the AI button.
+
+### Rate Limiting Implementation
+
+Rate limiting is enforced on the backend via [middleware/aiRateLimiter.js](./middleware/aiRateLimiter.js):
+- **Limit**: Maximum **1 request per task per minute** per client.
+- **Mechanism**: In-memory timestamp tracker keyed by client IP and normalized task title.
+- **Response**: Returns HTTP 429 Too Many Requests with the exact remaining wait time.
+- **Scope**: Applied exclusively to POST /api/ai/generate-description. Normal task CRUD operations (/tasks) are completely unaffected.
+
+### Responsible AI and Privacy Considerations
+
+- **Data Minimization**: Only the 	itle string is sent to the OpenAI API.
+- **Zero Sensitive Data**: User emails, passwords, JWT tokens, and private database IDs are never sent to external AI services.
+- **Strict System Prompt**: Restricts model output to safe, practical, plain-text sentences without hallucinated Markdown tags.
+- **Human in the Loop**: The user retains full control and responsibility to review, modify, or reject AI-generated suggestions before storing them in MongoDB.
+
+### Automated Testing (Jest & Supertest)
+
+The test suite in [	ask_api.test.js](./task_api.test.js) tests all aspects of the application (11 tests in total):
+
+1. **Practical 11 & 12 Tests (6 tests)**:
+   - Authentication checks for GET /tasks and POST /tasks
+   - User registration (success and missing fields validation)
+   - User login authentication checks
+2. **Practical 13 AI Tests (5 tests)**:
+   - Successful description generation with valid title (mocked OpenAI SDK)
+   - 400 Bad Request validation on empty or missing title
+   - 429 Too Many Requests rate limit enforcement on duplicate requests
+   - 200 OK Graceful fallback when API key is missing or placeholder
+   - 200 OK Graceful fallback when OpenAI service times out or throws an error
+
+#### Mocking Strategy
+The OpenAI SDK is mocked in Jest:
+`javascript
+jest.mock("openai", () => {
+  return jest.fn().mockImplementation(() => ({
+    chat: { completions: { create: mockCreateChatCompletion } }
+  }));
+});
+`
+This guarantees that:
+- Automated tests and GitHub Actions CI pipelines **pass without requiring a real API key**.
+- Tests execute in **~3 seconds**.
+- **No OpenAI credits** are consumed during testing.
+
+### Running Tests Locally
+
+From the project root:
+`ash
+npm test
+`
+
+Expected output:
+`	ext
+PASS ./task_api.test.js
+  GET /tasks without authentication
+    ? should return 401 when authentication header is missing
+  POST /tasks without authentication
+    ? should return 401 when authentication header is missing
+  POST /register
+    ? should register a new user
+    ? should return 400 when email is missing
+    ? should return 400 when password is missing
+  POST /login
+    ? should return 401 with invalid credentials
+  POST /api/ai/generate-description
+    ? should generate a task description when a valid title is provided
+    ? should return 400 when task title is empty or missing
+    ? should enforce rate limiting on repeated requests for the same task title within one minute
+    ? should return fallback description gracefully when API key is missing or placeholder
+    ? should return fallback description without crashing when OpenAI service encounters an error or timeout
+
+Test Suites: 1 passed, 1 total
+Tests:       11 passed, 11 total
+`
+
+### Faculty Practical Demonstration Steps
+
+To demonstrate Practical 13 to your faculty:
+1. **Start the Application**:
+   - Backend: 
+ode server.js (listening on port 5000)
+   - Frontend: cd frontend && npm run dev (listening on port 5173)
+2. **Sign In**: Log into the application from the React web interface.
+3. **Test Empty Validation**: Click "Generate Description" with an empty title to show the validation message.
+4. **Generate Description**:
+   - Type title: *"Complete DBMS assignment"*
+   - Click **? Generate Description**
+   - Point out the **loading spinner** ("Generating description with AI...")
+   - Observe the description populated into the description box.
+5. **Demonstrate Human-in-the-Loop Editing**:
+   - Edit the generated text inside the textarea (e.g., append specific chapter numbers).
+   - Point out the required disclaimer: *"AI-generated suggestion: Please review and edit the description before saving."*
+6. **Save Task**: Click **Create task** and verify that the task with the edited description appears in the "Saved tasks" list.
+7. **Demonstrate Rate Limiting**: Immediately click **? Generate Description** again with the same title to show the rate limit notice.
+8. **Demonstrate Graceful Fallback**: Explain how fallback descriptions are generated if the API key is not configured or if the external AI service times out.
+9. **Show CI Pipeline**: Run 
+pm test to prove all 11 automated tests pass cleanly.
+
+---
+
+**For academic practical demonstration of AI API integration into modern full-stack web applications.**

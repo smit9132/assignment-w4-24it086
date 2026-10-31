@@ -84,3 +84,10 @@ export const updateTask = async (id, task) => {
 };
 
 export const deleteTask = async (id) => request(`/tasks/${id}`, { method: "DELETE" });
+
+export const generateAiDescription = async (title) => {
+  return request("/api/ai/generate-description", {
+    method: "POST",
+    body: JSON.stringify({ title }),
+  }, false);
+};

@@ -24,9 +24,11 @@ require("./listeners");
 const taskRoutes = require('./routes/taskRoutes');
 const authRoutes = require('./routes/authRoutes');
 const cacheRoutes = require('./routes/cacheRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 app.use("/", authRoutes);
 app.use("/", taskRoutes);
 app.use("/", cacheRoutes);
+app.use("/api/ai", aiRoutes);
 
 // Define a simple route for GET /
 app.get("/", (req, res) => {
